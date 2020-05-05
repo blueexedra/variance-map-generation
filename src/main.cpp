@@ -35,7 +35,7 @@ using namespace std;
 using namespace cv;
 using namespace util;
 
-// Usage: variance_map [image_path] [number_of_images] [image_extension] [window_size]
+// Usage: variance_map [image_path] [number_of_images] [image_extension] [matching_window_size]
 int main(int argc, char **argv)
 {
     if (argc != 5)
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     }
 
     char imagePath[256];
-    const size_t numberOfImages = atoi(argv[2]);
+    const size_t numberOfImages = strtol(argv[2], nullptr, 10);
     const string imageExtension(argv[3]);
 
     string dataPath(argv[1]);
@@ -56,9 +56,9 @@ int main(int argc, char **argv)
 
     vector<Mat_<float>> images;
     cout << "Loading images..." << endl;
-    for (int i = 0; i < numberOfImages; i++)
+    for (size_t i = 0; i < numberOfImages; i++)
     {
-        sprintf(imagePath, "%s%04d.%s", dataPath.c_str(), i + 1, imageExtension.c_str());
+        sprintf(imagePath, "%s%04lu.%s", dataPath.c_str(), i + 1, imageExtension.c_str());
         images.emplace_back(imread(imagePath, IMREAD_GRAYSCALE));
         if (images[i].empty())
         {
@@ -70,18 +70,24 @@ int main(int argc, char **argv)
     cout << "Loaded " << images.size() << " images" << endl;
     cout << endl;
 
-    const size_t width = images[0].cols;
-    const size_t height = images[0].rows;
-    const size_t windowSize = atoi(argv[4]);
+    vector<size_t> widths(images.size());
+    vector<size_t> heights(images.size());
+
+    for(size_t i = 0; i < numberOfImages; i++){
+        widths[i] = images[i].cols;
+        heights[i] = images[i].rows;
+    }
+
+    const size_t windowSize = strtol(argv[4], nullptr, 10);
     vector<Mat_<float>> varianceMaps;
 
     size_t count = 0;
     auto lambdaBody = [&](string &output_string) {
-        Mat_<float> varianceMap = Mat_<float>::zeros(height, width);
+        Mat_<float> varianceMap = Mat_<float>::zeros(heights[count], widths[count]);
 #pragma omp parallel for
-        for (size_t u = 0; u < width; u++)
+        for (size_t u = 0; u < widths[count]; u++)
         {
-            for (size_t v = 0; v < height; v++)
+            for (size_t v = 0; v < heights[count]; v++)
             {
                 VarianceComputer computer(windowSize, images[count]);
                 varianceMap.at<float>(v, u) = computer.computeVarianceAt(make_pair(u, v));
