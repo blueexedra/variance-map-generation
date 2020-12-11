@@ -35,78 +35,80 @@ using namespace std;
 using namespace cv;
 using namespace util;
 
-// Usage: variance_map [image_path] [number_of_images] [image_extension] [matching_window_size]
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    if (argc != 5)
-    {
-        cout << "Usage: variance_map [image_path] [number_of_images] [image_extension] [window_size]" << endl;
-        return 1;
-    }
+	if (argc != 5)
+	{
+		cout << "Usage: variance_map [image_path] [number_of_images] [image_extension] [window_size]" << endl;
+		return 1;
+	}
 
-    char imagePath[256];
-    const size_t numberOfImages = strtol(argv[2], nullptr, 10);
-    const string imageExtension(argv[3]);
+	char imagePath[256];
+	const size_t numberOfImages = strtol(argv[2], nullptr, 10);
+	const string imageExtension(argv[3]);
 
-    string dataPath(argv[1]);
-    const string imagePrefix("im_");
-    const char directorySeparatorChar = '/';
-    dataPath += directorySeparatorChar;
-    dataPath += imagePrefix;
+	string dataPath(argv[1]);
+	const string imagePrefix("im_");
+	const char directorySeparatorChar = '/';
+	dataPath += directorySeparatorChar;
+	dataPath += imagePrefix;
 
-    vector<Mat_<float>> images;
-    cout << "Loading images..." << endl;
-    for (size_t i = 0; i < numberOfImages; i++)
-    {
-        sprintf(imagePath, "%s%04lu.%s", dataPath.c_str(), i + 1, imageExtension.c_str());
-        images.emplace_back(imread(imagePath, IMREAD_GRAYSCALE));
-        if (images[i].empty())
-        {
-            cout << "Could not read image No." << to_string(i + 1) << endl;
-            return 1;
-        }
-    }
+	vector<Mat_<float>> images;
+	cout << "Loading images..." << endl;
+	for (size_t i = 0; i < numberOfImages; i++)
+	{
+		sprintf(imagePath, "%s%04lu.%s", dataPath.c_str(), i + 1, imageExtension.c_str());
+		images.emplace_back(imread(imagePath, IMREAD_GRAYSCALE));
+		if (images[i].empty())
+		{
+			cout << "Could not read image No." << to_string(i + 1) << endl;
+			return 1;
+		}
+	}
 
-    cout << "Loaded " << images.size() << " images" << endl;
-    cout << endl;
+	cout << "Loaded " << images.size() << " images" << endl;
+	cout << endl;
 
-    vector<size_t> widths(images.size());
-    vector<size_t> heights(images.size());
+	vector<size_t> widths(images.size());
+	vector<size_t> heights(images.size());
 
-    for(size_t i = 0; i < numberOfImages; i++){
-        widths[i] = images[i].cols;
-        heights[i] = images[i].rows;
-    }
+	for (size_t i = 0; i < numberOfImages; i++)
+	{
+		widths[i] = images[i].cols;
+		heights[i] = images[i].rows;
+	}
 
-    const size_t windowSize = strtol(argv[4], nullptr, 10);
-    vector<Mat_<float>> varianceMaps;
+	const size_t windowSize = strtol(argv[4], nullptr, 10);
+	vector<Mat_<float>> varianceMaps;
 
-    size_t count = 0;
-    auto lambdaBody = [&](string &output_string) {
-        Mat_<float> varianceMap = Mat_<float>::zeros(heights[count], widths[count]);
+	size_t count = 0;
+	auto lambdaBody = [&](string& output_string)
+	{
+		Mat_<float> varianceMap = Mat_<float>::zeros(heights[count], widths[count]);
 #pragma omp parallel for
-        for (size_t u = 0; u < widths[count]; u++)
-        {
-            for (size_t v = 0; v < heights[count]; v++)
-            {
-                VarianceComputer computer(windowSize, images[count]);
-                varianceMap.at<float>(v, u) = computer.computeVarianceAt(make_pair(u, v));
-            }
-        }
-        varianceMaps.emplace_back(varianceMap);
-        count++;
-    };
+		for (size_t u = 0; u < widths[count]; u++)
+		{
+			for (size_t v = 0; v < heights[count]; v++)
+			{
+				VarianceComputer computer(windowSize, images[count]);
+				varianceMap.at<float>(v, u) = computer.computeVarianceAt(make_pair(u, v));
+			}
+		}
+		varianceMaps.emplace_back(varianceMap);
+		count++;
+	};
 
-    cout << "[Generate Variance Map]" << endl;
-    for_progress(numberOfImages, lambdaBody);
+	cout << "[Generate Variance Map]" << endl;
+	for_progress(numberOfImages, lambdaBody);
 
-    count = 0;
-    auto lambdaBodyForWriting = [&](string &output_string){
-        sprintf(imagePath, "%s%04lu.variance.%s", dataPath.c_str(), count + 1, imageExtension.c_str());
-        imwrite(imagePath, varianceMaps[count]);
-        count++;
-    };
-    cout << "Writing images..." << endl;
-    for_progress(numberOfImages, lambdaBodyForWriting);
-    return 0;
+	count = 0;
+	auto lambdaBodyForWriting = [&](string& output_string)
+	{
+		sprintf(imagePath, "%s%04lu.variance.%s", dataPath.c_str(), count + 1, imageExtension.c_str());
+		imwrite(imagePath, varianceMaps[count]);
+		count++;
+	};
+	cout << "Writing images..." << endl;
+	for_progress(numberOfImages, lambdaBodyForWriting);
+	return 0;
 }

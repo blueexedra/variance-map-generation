@@ -2,27 +2,32 @@
 <project version="4">
   <component name="PublishConfigData">
     <serverData>
-      <paths name="Remote Host (540f3fd8-3fa3-4738-a7de-9e57e584a34f)">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/home/aoki/takafumi/projects/clion/variance_map_generation" local="$PROJECT_DIR$" />
-          </mappings>
-          <excludedPaths>
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release" />
-          </excludedPaths>
-        </serverdata>
-      </paths>
-      <paths name="Remote Host (london) (320ed996-1f5e-4190-a552-77af3c368a9c)">
+      <paths name="Remote Host (keras) (d4f74c1e-2be4-4ed7-89ea-a308cf69340a)">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
-      <paths name="WSL (1d348335-e1bd-4808-94cd-63d0a2ea02ec)">
+      <paths name="Remote Host (tensor) (562a2671-2b6e-49d4-b942-951d464a14e7)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/aoki/takafumi/projects/clion/variance_map_generation" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="Remote Host(London) (2e62971a-b63c-408b-a960-66a4c15ffef9)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="tensor">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
