@@ -27,6 +27,7 @@ SOFTWARE.
 #include <string>
 #include <vector>
 #include <omp.h>
+#include <filesystem>
 
 #include "CppProgressBar.hpp"
 #include "VarianceComputer.h"
@@ -37,48 +38,46 @@ using namespace util;
 
 int main(int argc, char** argv)
 {
-	if (argc != 5)
+	if (argc != 3)
 	{
-		cout << "Usage: variance_map [image_path] [number_of_images] [image_extension] [window_size]" << endl;
+		cout << "Usage: variance_map [image_path] [window_size]" << endl;
 		return 1;
 	}
 
-	char imagePath[256];
-	const size_t numberOfImages = strtol(argv[2], nullptr, 10);
-	const string imageExtension(argv[3]);
-
-	string dataPath(argv[1]);
-	const string imagePrefix("im_");
-	const char directorySeparatorChar = '/';
-	dataPath += directorySeparatorChar;
-	dataPath += imagePrefix;
+	filesystem::path data_path(argv[1]);
 
 	vector<Mat_<float>> images;
+	filesystem::path extension;
+	vector<filesystem::path> image_names;
+
 	cout << "Loading images..." << endl;
-	for (size_t i = 0; i < numberOfImages; i++)
-	{
-		sprintf(imagePath, "%s%04lu.%s", dataPath.c_str(), i + 1, imageExtension.c_str());
-		images.emplace_back(imread(imagePath, IMREAD_GRAYSCALE));
-		if (images[i].empty())
+	for(const auto& f : filesystem::directory_iterator(data_path)){
+		const auto path = f.path();
+		const auto image = imread(path, IMREAD_GRAYSCALE);
+		if (image.empty())
 		{
-			cout << "Could not read image No." << to_string(i + 1) << endl;
-			return 1;
+			continue;
 		}
+
+		extension = path.extension();
+		images.emplace_back(image);
+		image_names.emplace_back(path.stem());
 	}
 
-	cout << "Loaded " << images.size() << " images" << endl;
+	const auto number_of_images = images.size();
+	cout << "Loaded " << number_of_images << " images" << endl;
 	cout << endl;
 
 	vector<size_t> widths(images.size());
 	vector<size_t> heights(images.size());
 
-	for (size_t i = 0; i < numberOfImages; i++)
+	for (size_t i = 0; i < number_of_images; i++)
 	{
 		widths[i] = images[i].cols;
 		heights[i] = images[i].rows;
 	}
 
-	const size_t windowSize = strtol(argv[4], nullptr, 10);
+	const size_t window_size = strtol(argv[2], nullptr, 10);
 	vector<Mat_<float>> varianceMaps;
 
 	size_t count = 0;
@@ -90,7 +89,7 @@ int main(int argc, char** argv)
 		{
 			for (size_t v = 0; v < heights[count]; v++)
 			{
-				VarianceComputer computer(windowSize, images[count]);
+				VarianceComputer computer(window_size, images[count]);
 				varianceMap.at<float>(v, u) = computer.computeVarianceAt(make_pair(u, v));
 			}
 		}
@@ -99,16 +98,27 @@ int main(int argc, char** argv)
 	};
 
 	cout << "[Generate Variance Map]" << endl;
-	for_progress(numberOfImages, lambdaBody);
+	for_progress(number_of_images, lambdaBody);
 
 	count = 0;
+	data_path /= "variances";
+	filesystem::create_directories(data_path);
+
 	auto lambdaBodyForWriting = [&](string& output_string)
 	{
-		sprintf(imagePath, "%s%04lu.variance.%s", dataPath.c_str(), count + 1, imageExtension.c_str());
-		imwrite(imagePath, varianceMaps[count]);
+		const auto name = image_names[count];
+		std::string output_path(data_path.string());
+		output_path += "/";
+		output_path += name;
+		output_path += "_variance";
+		output_path += "_window";
+		output_path += to_string(window_size);
+		output_path += extension.string();
+
+		imwrite(output_path, varianceMaps[count]);
 		count++;
 	};
 	cout << "Writing images..." << endl;
-	for_progress(numberOfImages, lambdaBodyForWriting);
+	for_progress(number_of_images, lambdaBodyForWriting);
 	return 0;
 }
